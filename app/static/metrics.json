@@ -1,0 +1,159 @@
+{
+    "accuracy": 0.7499556422995032,
+    "precision": 0.763106960355131,
+    "recall": 0.49808548209703896,
+    "f1_score": 0.5084699753671089,
+    "class_metrics": {
+        "Normal": {
+            "precision": 0.6492024202420242,
+            "recall": 0.972299454227165,
+            "f1_score": 0.7785611214182643,
+            "support": 9711
+        },
+        "DoS": {
+            "precision": 0.9625468164794008,
+            "recall": 0.7923592493297588,
+            "f1_score": 0.8692007940592603,
+            "support": 7460
+        },
+        "Probe": {
+            "precision": 0.8365867261572784,
+            "recall": 0.6195786864931846,
+            "f1_score": 0.7119126720455624,
+            "support": 2421
+        },
+        "R2L": {
+            "precision": 0.9056603773584906,
+            "recall": 0.016637781629116118,
+            "f1_score": 0.03267528931245745,
+            "support": 2885
+        },
+        "U2R": {
+            "precision": 0.46153846153846156,
+            "recall": 0.08955223880597014,
+            "f1_score": 0.15,
+            "support": 67
+        }
+    },
+    "confusion_matrix": [
+        [
+            9442,
+            67,
+            198,
+            2,
+            2
+        ],
+        [
+            1476,
+            5911,
+            73,
+            0,
+            0
+        ],
+        [
+            758,
+            163,
+            1500,
+            0,
+            0
+        ],
+        [
+            2810,
+            0,
+            22,
+            48,
+            5
+        ],
+        [
+            58,
+            0,
+            0,
+            3,
+            6
+        ]
+    ],
+    "class_distribution": {
+        "train": {
+            "Normal": 53874,
+            "DoS": 36741,
+            "Probe": 9325,
+            "R2L": 796,
+            "U2R": 42
+        },
+        "val": {
+            "Normal": 13469,
+            "DoS": 9186,
+            "Probe": 2331,
+            "R2L": 199,
+            "U2R": 10
+        },
+        "test": {
+            "Normal": 9711,
+            "DoS": 7460,
+            "Probe": 2421,
+            "R2L": 2885,
+            "U2R": 67
+        }
+    },
+    "top_features": [
+        {
+            "name": "src_bytes",
+            "importance": 0.09207117819349829
+        },
+        {
+            "name": "dst_host_srv_count",
+            "importance": 0.07516358470126225
+        },
+        {
+            "name": "dst_bytes",
+            "importance": 0.06012589569625722
+        },
+        {
+            "name": "logged_in",
+            "importance": 0.04189705596765661
+        },
+        {
+            "name": "dst_host_serror_rate",
+            "importance": 0.04072546449688799
+        },
+        {
+            "name": "srv_count",
+            "importance": 0.039625646581330984
+        },
+        {
+            "name": "dst_host_same_src_port_rate",
+            "importance": 0.03238841322451966
+        },
+        {
+            "name": "dst_host_srv_serror_rate",
+            "importance": 0.03193640865769752
+        },
+        {
+            "name": "dst_host_count",
+            "importance": 0.03187311707607903
+        },
+        {
+            "name": "service_telnet",
+            "importance": 0.031099236904034554
+        }
+    ],
+    "model_info": {
+        "model_name": "RandomForestClassifier",
+        "n_estimators": 100,
+        "random_state": 42,
+        "class_weight": "balanced",
+        "n_features_in": 122,
+        "num_classes": 5,
+        "classes": [
+            "Normal",
+            "DoS",
+            "Probe",
+            "R2L",
+            "U2R"
+        ],
+        "training_samples": 100778,
+        "validation_samples": 25195,
+        "test_samples": 22544,
+        "timestamp": "2026-06-16 20:04:22"
+    }
+}

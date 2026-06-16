@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases (initialized empty in production dynamically)
+data/alerts.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Datasets exceeding GitHub limit
+data/raw/
+data/processed/*.csv
+data/processed/*.txt
+
+# Uploaded temporary traffic packets
+scratch/*.pcap
+scratch/*.pcapng

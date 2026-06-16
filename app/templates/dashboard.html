@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreatLensAI</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <div class="logo-text">
+                    <h2>ThreatLensAI</h2>
+                    <span>ThreatLensAI</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-tab="dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    Overview Dashboard
+                </button>
+                <button class="nav-item" data-tab="alerts">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    Security Alerts
+                    <span class="badge" id="alerts-badge">12</span>
+                </button>
+                <button class="nav-item" data-tab="analyze">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="22" y1="12" x2="18" y2="12"/>
+                        <line x1="6" y1="12" x2="2" y2="12"/>
+                        <line x1="12" y1="6" x2="12" y2="2"/>
+                        <line x1="12" y1="22" x2="12" y2="18"/>
+                    </svg>
+                    Traffic Analyzer
+                </button>
+                <button class="nav-item" data-tab="performance">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                    Model Performance
+                </button>
+                <button class="nav-item" data-tab="pcap">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    PCAP Analyzer
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-indicator online"></div>
+                    <div class="status-details">
+                        <p>Classifier Model</p>
+                        <span id="model-status-text">Connecting...</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div class="header-title">
+                    <h1 id="current-view-title">SOC Overview Dashboard</h1>
+                    <p id="current-view-subtitle">Real-time threat monitoring and network traffic classification</p>
+                </div>
+                <div class="header-actions">
+                    <div class="time-display" id="time-display">2026-06-16 11:20:00</div>
+                    <button class="btn btn-primary btn-sm" id="btn-refresh">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                        Refresh Feed
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Content Container -->
+            <div class="tab-content" id="tab-dashboard">
+                <!-- Stat Grid -->
+                <section class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Packets Analyzed</span>
+                            <div class="stat-icon-wrapper blue">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value" id="stat-total-packets">0</h2>
+                        <span class="stat-change text-success">↑ 100% real-time</span>
+                    </div>
+                    
+                    <div class="stat-card alert-active">
+                        <div class="stat-header">
+                            <span class="stat-label">Threats Detected</span>
+                            <div class="stat-icon-wrapper red pulsing">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value text-danger" id="stat-threats-count">0</h2>
+                        <span class="stat-change text-danger" id="stat-threats-pct">0.00% of traffic</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Overall Risk Score</span>
+                            <div class="stat-icon-wrapper yellow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 8v4l3 3"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="risk-meter-wrapper">
+                            <h2 class="stat-value" id="stat-risk-score">0</h2>
+                            <span class="risk-label" id="risk-level-label">Normal</span>
+                        </div>
+                        <span class="stat-change" id="risk-score-change">Based on active vectors</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">SOC Health Status</span>
+                            <div class="stat-icon-wrapper green">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value text-success" id="stat-health-status">ONLINE</h2>
+                        <span class="stat-change text-success">✓ Engine active</span>
+                    </div>
+                </section>
+
+                <!-- Critical Alert Queue (Alert Prioritization Engine) -->
+                <section class="priority-queue-section">
+                    <div class="card priority-card">
+                        <div class="card-header alert-queue-header">
+                            <div class="header-left">
+                                <h3 class="queue-title-glow">Prioritized Threat Queue</h3>
+                                <span class="card-subtitle">AI-prioritized threats based on vector risk and indicator severity (solves alert fatigue)</span>
+                            </div>
+                            <span class="badge badge-pulse">AI Prioritizer Active</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert-queue" id="priority-alert-queue">
+                                <div class="queue-placeholder">
+                                    <p>Monitoring network... No critical threats prioritized.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chart Section -->
+                <section class="chart-section">
+                    <div class="card chart-card flex-2">
+                        <div class="card-header">
+                            <h3>Threat Categories Distribution</h3>
+                            <span class="card-subtitle">Breakdown of network traffic by threat signature</span>
+                        </div>
+                        <div class="card-body chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card chart-card flex-3">
+                        <div class="card-header">
+                            <h3>Traffic Classification Stream</h3>
+                            <span class="card-subtitle">Normal vs malicious packets monitored over time</span>
+                        </div>
+                        <div class="card-body chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Alerts Content Container -->
+            <div class="tab-content hidden" id="tab-alerts">
+                <div class="card filter-card">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-severity">Severity</label>
+                            <select id="filter-severity" class="form-control">
+                                <option value="all">All Severities</option>
+                                <option value="critical">Critical (U2R)</option>
+                                <option value="high">High (R2L)</option>
+                                <option value="medium">Medium (DoS / Probe)</option>
+                                <option value="low">Low (Normal)</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-protocol">Protocol</label>
+                            <select id="filter-protocol" class="form-control">
+                                <option value="all">All Protocols</option>
+                                <option value="tcp">TCP</option>
+                                <option value="udp">UDP</option>
+                                <option value="icmp">ICMP</option>
+                            </select>
+                        </div>
+                        <div class="filter-group flex-grow">
+                            <label for="search-alert">Search Service/Flag</label>
+                            <input type="text" id="search-alert" class="form-control" placeholder="Search by service (e.g. http, private) or flag...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card table-card">
+                    <div class="card-header">
+                        <h3>Security Alerts Log</h3>
+                        <span class="card-subtitle">Real-time classification record history of incoming packets</span>
+                    </div>
+                    <div class="card-body no-padding">
+                        <div class="table-responsive">
+                            <table class="table" id="alerts-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Protocol</th>
+                                        <th>Service</th>
+                                        <th>Flag</th>
+                                        <th>Threat Class</th>
+                                        <th>Confidence</th>
+                                        <th>Severity</th>
+                                        <th>Mitigation Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analyze Content Container -->
+            <div class="tab-content hidden" id="tab-analyze">
+                <div class="analyze-layout">
+                    <!-- Config Form Card -->
+                    <div class="card form-card">
+                        <div class="card-header">
+                            <h3>Connection Parameters</h3>
+                            <span class="card-subtitle">Fill in packet attributes manually or load a training preset</span>
+                        </div>
+                        <div class="card-body">
+                            <!-- Preset Bar -->
+                            <div class="preset-bar">
+                                <span class="preset-label">Load Preset Sample:</span>
+                                <div class="preset-buttons">
+                                    <button class="btn btn-secondary btn-xs" id="preset-normal">Normal HTTP</button>
+                                    <button class="btn btn-secondary btn-xs" id="preset-dos">Neptune DoS</button>
+                                    <button class="btn btn-secondary btn-xs" id="preset-probe">Satan Probe</button>
+                                    <button class="btn btn-secondary btn-xs" id="preset-r2l">Brute Force R2L</button>
+                                </div>
+                            </div>
+                            
+                            <form id="form-analyzer" class="analyzer-form">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="param-duration">Duration (sec)</label>
+                                        <input type="number" id="param-duration" class="form-control" value="0" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-protocol_type">Protocol Type</label>
+                                        <select id="param-protocol_type" class="form-control" required>
+                                            <option value="tcp">TCP</option>
+                                            <option value="udp">UDP</option>
+                                            <option value="icmp">ICMP</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-service">Network Service</label>
+                                        <input type="text" id="param-service" class="form-control" value="http" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-flag">Status Flag</label>
+                                        <input type="text" id="param-flag" class="form-control" value="SF" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-src_bytes">Source Bytes</label>
+                                        <input type="number" id="param-src_bytes" class="form-control" value="0" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-dst_bytes">Destination Bytes</label>
+                                        <input type="number" id="param-dst_bytes" class="form-control" value="0" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-count">Same Host Count</label>
+                                        <input type="number" id="param-count" class="form-control" value="1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-srv_count">Same Service Count</label>
+                                        <input type="number" id="param-srv_count" class="form-control" value="1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-dst_host_count">Dst Host Count</label>
+                                        <input type="number" id="param-dst_host_count" class="form-control" value="1" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="param-dst_host_srv_count">Dst Host Srv Count</label>
+                                        <input type="number" id="param-dst_host_srv_count" class="form-control" value="1" required>
+                                    </div>
+                                    <!-- Hidden / Simplified default features to keep form clean -->
+                                    <input type="hidden" id="param-land" value="0">
+                                    <input type="hidden" id="param-wrong_fragment" value="0">
+                                    <input type="hidden" id="param-urgent" value="0">
+                                    <input type="hidden" id="param-hot" value="0">
+                                    <input type="hidden" id="param-num_failed_logins" value="0">
+                                    <input type="hidden" id="param-logged_in" value="0">
+                                    <input type="hidden" id="param-num_compromised" value="0">
+                                    <input type="hidden" id="param-root_shell" value="0">
+                                    <input type="hidden" id="param-su_attempted" value="0">
+                                    <input type="hidden" id="param-num_root" value="0">
+                                    <input type="hidden" id="param-num_file_creations" value="0">
+                                    <input type="hidden" id="param-num_shells" value="0">
+                                    <input type="hidden" id="param-num_access_files" value="0">
+                                    <input type="hidden" id="param-num_outbound_cmds" value="0">
+                                    <input type="hidden" id="param-is_host_login" value="0">
+                                    <input type="hidden" id="param-is_guest_login" value="0">
+                                    <input type="hidden" id="param-serror_rate" value="0.0">
+                                    <input type="hidden" id="param-srv_serror_rate" value="0.0">
+                                    <input type="hidden" id="param-rerror_rate" value="0.0">
+                                    <input type="hidden" id="param-srv_rerror_rate" value="0.0">
+                                    <input type="hidden" id="param-same_srv_rate" value="1.0">
+                                    <input type="hidden" id="param-diff_srv_rate" value="0.0">
+                                    <input type="hidden" id="param-srv_diff_host_rate" value="0.0">
+                                    <input type="hidden" id="param-dst_host_same_srv_rate" value="1.0">
+                                    <input type="hidden" id="param-dst_host_diff_srv_rate" value="0.0">
+                                    <input type="hidden" id="param-dst_host_same_src_port_rate" value="1.0">
+                                    <input type="hidden" id="param-dst_host_srv_diff_host_rate" value="0.0">
+                                    <input type="hidden" id="param-dst_host_serror_rate" value="0.0">
+                                    <input type="hidden" id="param-dst_host_srv_serror_rate" value="0.0">
+                                    <input type="hidden" id="param-dst_host_rerror_rate" value="0.0">
+                                    <input type="hidden" id="param-dst_host_srv_rerror_rate" value="0.0">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block" id="btn-submit-analyze">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                    </svg>
+                                    Analyze Network Packet
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Diagnosis Report Card -->
+                    <div class="card result-card" id="analysis-result-panel">
+                        <div class="card-header">
+                            <h3>Inference Diagnostics</h3>
+                            <span class="card-subtitle">AI Model threat classification results</span>
+                        </div>
+                        <div class="card-body result-placeholder-body" id="result-placeholder">
+                            <div class="placeholder-icon-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                            </div>
+                            <p>Awaiting Packet Input...</p>
+                            <span>Fill features and click analyze to run threat model.</span>
+                        </div>
+                        <div class="card-body hidden" id="result-content">
+                            <!-- Threat Output Banner -->
+                            <div class="threat-output-banner" id="threat-banner">
+                                <div class="threat-icon-box" id="threat-banner-icon">
+                                    <!-- SVG loaded dynamically -->
+                                </div>
+                                <div class="threat-title-box">
+                                    <h2 id="result-threat-class">Normal</h2>
+                                    <span id="result-threat-level">NO THREAT DETECTED</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Prioritization Diagnostic Details -->
+                            <div class="prioritization-details-box" id="result-prioritization-box">
+                                <div class="p-details-header">
+                                    <div class="p-score-container">
+                                        <span class="p-score-title">Priority score</span>
+                                        <h3 class="p-score-num" id="result-priority-score">95</h3>
+                                    </div>
+                                    <span class="p-badge" id="result-priority-level-badge">Critical</span>
+                                </div>
+                                <div class="p-details-body">
+                                    <p class="p-detail-item"><strong>Risk Reason:</strong> <span id="result-priority-reason">--</span></p>
+                                    <p class="p-detail-item"><strong>Playbook Action:</strong> <span id="result-playbook-action">--</span></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Confidence Bar -->
+                            <div class="confidence-box">
+                                <div class="confidence-header">
+                                    <span>Classification Confidence</span>
+                                    <strong id="result-confidence">0.00%</strong>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" id="result-confidence-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Detailed Breakdown -->
+                            <div class="probabilities-breakdown">
+                                <h4>Category Probabilities</h4>
+                                <div class="prob-rows" id="prob-breakdown-rows">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                            
+                            <!-- Mitigation Box -->
+                            <div class="mitigation-box">
+                                <h4>Recommended Mitigation Checklist</h4>
+                                <ul id="result-mitigation-list">
+                                    <!-- Populated dynamically -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Performance Content Container -->
+            <div class="tab-content hidden" id="tab-performance">
+                <!-- Stat Grid -->
+                <section class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Model Accuracy</span>
+                            <div class="stat-icon-wrapper blue">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value" id="perf-accuracy">--%</h2>
+                        <span class="stat-change text-success">Overall test validation</span>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Model Precision</span>
+                            <div class="stat-icon-wrapper yellow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                    <polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value" id="perf-precision">--%</h2>
+                        <span class="stat-change text-success">Macro average score</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Model Recall</span>
+                            <div class="stat-icon-wrapper green">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M8 12h8"/>
+                                    <path d="M12 8v8"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value" id="perf-recall">--%</h2>
+                        <span class="stat-change text-success">Macro average score</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">F1 Score</span>
+                            <div class="stat-icon-wrapper red">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value text-danger" id="perf-f1">--%</h2>
+                        <span class="stat-change text-danger">Harmonic mean score</span>
+                    </div>
+                </section>
+
+                <!-- Confusion Matrix & Class Distribution Chart -->
+                <section class="chart-section">
+                    <div class="card chart-card flex-3">
+                        <div class="card-header">
+                            <h3>Confusion Matrix Heatmap</h3>
+                            <span class="card-subtitle">Actual vs Predicted classifications</span>
+                        </div>
+                        <div class="card-body flex-grow">
+                            <div class="confusion-matrix-wrapper">
+                                <div class="cm-grid-container" id="confusion-matrix-grid">
+                                    <!-- Rendered dynamically via javascript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card chart-card flex-2">
+                        <div class="card-header">
+                            <h3>Class Distribution</h3>
+                            <span class="card-subtitle">Comparing samples in Train, Val, and Test splits</span>
+                        </div>
+                        <div class="card-body chart-container">
+                            <canvas id="performanceDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Model Info & Top Feature Importances -->
+                <section class="chart-section">
+                    <div class="card chart-card flex-2">
+                        <div class="card-header">
+                            <h3>Model Information</h3>
+                            <span class="card-subtitle">Core classifier details and hyperparameter state</span>
+                        </div>
+                        <div class="card-body no-padding" style="overflow-y: auto;">
+                            <table class="table" id="model-info-table">
+                                <tbody>
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card flex-3">
+                        <div class="card-header">
+                            <h3>Top 10 Feature Importances</h3>
+                            <span class="card-subtitle">Most significant connection indicators resolved by Random Forest</span>
+                        </div>
+                        <div class="card-body chart-container">
+                            <canvas id="featureImportanceChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- PCAP Analyzer Content Container -->
+            <div class="tab-content hidden" id="tab-pcap">
+                <!-- Dropzone Section -->
+                <section class="pcap-upload-section">
+                    <div class="card pcap-card">
+                        <div class="card-header">
+                            <h3>Upload Packet Capture File</h3>
+                            <span class="card-subtitle">Supported formats: .pcap, .pcapng. Packets will be parsed and classified in real-time.</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="pcap-dropzone" id="pcap-dropzone">
+                                <div class="dropzone-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                                    </svg>
+                                </div>
+                                <p class="dropzone-text">Drag & drop your PCAP file here or click to browse</p>
+                                <span class="dropzone-subtext">Max size: 50MB (processing larger files may take some time)</span>
+                                <input type="file" id="pcap-file-input" accept=".pcap,.pcapng" style="display: none;">
+                            </div>
+                            
+                            <!-- Progress Bar Container -->
+                            <div class="pcap-progress-container hidden" id="pcap-progress-container">
+                                <div class="progress-status-row">
+                                    <span id="pcap-status-label">Uploading file...</span>
+                                    <strong id="pcap-progress-percent">0%</strong>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" id="pcap-progress-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Results Summary Grid -->
+                <section class="stat-grid hidden" id="pcap-stats-section">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Total Packets Parsed</span>
+                            <div class="stat-icon-wrapper blue">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                                    <polyline points="2 17 12 22 22 17"/>
+                                    <polyline points="2 12 12 17 22 12"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value" id="pcap-stat-packets">0</h2>
+                        <span class="stat-change" id="pcap-filename-label">file.pcap</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Extracted Flows</span>
+                            <div class="stat-icon-wrapper yellow">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value" id="pcap-stat-flows">0</h2>
+                        <span class="stat-change">Grouped by 5-tuple connections</span>
+                    </div>
+
+                    <div class="stat-card alert-active" id="pcap-threat-stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Threats Detected</span>
+                            <div class="stat-icon-wrapper red pulsing">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="stat-value text-danger" id="pcap-stat-threats">0</h2>
+                        <span class="stat-change text-danger" id="pcap-stat-threat-pct">0.00% of flows</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Max Risk Score</span>
+                            <div class="stat-icon-wrapper green" id="pcap-risk-icon-wrapper">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M12 8v4l3 3"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="risk-meter-wrapper">
+                            <h2 class="stat-value" id="pcap-stat-risk">0</h2>
+                            <span class="risk-label" id="pcap-risk-label">Normal</span>
+                        </div>
+                        <span class="stat-change">Threat prioritization engine</span>
+                    </div>
+                </section>
+
+                <!-- Flow Details Table -->
+                <section class="card table-card hidden" id="pcap-results-section">
+                    <div class="card-header">
+                        <h3>PCAP Flows Analysis Log</h3>
+                        <span class="card-subtitle">Detailed extraction and threat predictions for parsed connections</span>
+                    </div>
+                    <div class="card-body no-padding">
+                        <div class="table-responsive" style="max-height: 500px;">
+                            <table class="table" id="pcap-flows-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Flow Details (Src ➔ Dst)</th>
+                                        <th>Protocol</th>
+                                        <th>Service/Flag</th>
+                                        <th>Bytes (In/Out)</th>
+                                        <th>Prediction</th>
+                                        <th>Confidence</th>
+                                        <th>Risk Score</th>
+                                        <th>Recommended Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Custom Script -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
